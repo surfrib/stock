@@ -17,14 +17,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
+  color-scheme:light;
   --bg:#ffffff; --surface:#ffffff; --soft:#f1f4fb; --ink:#0b1b3a; --muted:#5b6b8c; --line:#e3e8f2;
   --brand:#1f4fff; --on-brand:#ffffff; --hi:#ffd83d;
   --up:#08894e; --down:#d92d3a; --accent:#1f4fff;
   --font:'Schibsted Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-}
-@media (prefers-color-scheme: dark){
-  :root{ --bg:#0a1020; --surface:#111a2e; --soft:#17213a; --ink:#eaf0ff; --muted:#8b9ac0; --line:#233052;
-    --brand:#2b55f5; --up:#2dd38c; --down:#ff6b72; --accent:#2b55f5; }
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -35,7 +32,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-variant-
 header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px}
 nav.tabs{display:flex;gap:4px;background:var(--brand);border-radius:12px;padding:4px;overflow-x:auto}
 nav.tabs button{font:inherit;font-weight:600;border:0;background:transparent;color:rgba(255,255,255,.82);padding:8px 16px;border-radius:9px;cursor:pointer;white-space:nowrap}
-nav.tabs button[aria-selected="true"]{background:var(--hi);color:#0b1b3a}
+nav.tabs button[aria-selected="true"]{background:#fff;color:var(--ink)}
 nav.tabs button:focus-visible{outline:2px solid #fff;outline-offset:1px}
 .refresh:focus-visible,th button:focus-visible,input:focus-visible,.linkbtn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .status{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
@@ -65,7 +62,7 @@ th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:
 tbody tr:last-child td{border-bottom:0}
 th{font-weight:500;color:var(--muted);font-size:12.5px;padding:0;background:var(--surface)}
 th button{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;padding:11px 12px;text-align:inherit}
-th.sorted button{color:var(--ink);font-weight:700;box-shadow:inset 0 -3px 0 var(--hi)}
+th.sorted button{color:var(--ink);font-weight:700;box-shadow:inset 0 -3px 0 var(--brand)}
 td.name small{display:block;color:var(--muted);font-size:12px}
 td.name b{font-weight:600}
 .range{display:inline-block;position:relative;width:70px;height:4px;border-radius:2px;background:var(--line);vertical-align:middle}
@@ -127,13 +124,12 @@ td.l{text-align:left}
       (or each tab) → format "Comma-separated values (.csv)" → Publish.
    2. Open the app and paste the published link when asked (stored in your browser only).
    3. gid is the number after "gid=" in the browser URL when you open a tab.
-   type "portfolio" = holdings dashboard; "transactions" = buy/sell ledger; "table" = generic table.
+   Every tab is shown as a holdings dashboard.
    ===================================================================== */
 // The sheet id is NOT stored here. You paste your published link once in the app and it is kept in this browser only.
 const TABS = [
   { id: "portfolio-1",  name: "Portfolio 1",  gid: "0",  type: "portfolio" },
-  { id: "portfolio-2",  name: "Portfolio 2",  gid: "1286686281", type: "portfolio" },
-  { id: "transactions", name: "Transactions", gid: "322267596",  type: "transactions" }
+  { id: "portfolio-2",  name: "Portfolio 2",  gid: "1286686281", type: "portfolio" }
 ];
 const REFRESH_MS = 5 * 60 * 1000;
 const LOCALE = "pt-PT";
@@ -276,12 +272,13 @@ function renderPortfolio(m,el){
       <b>${esc(h.ticker)}</b><span>${fNum.format(w)}% · ${pct(h.dayPct)}</span></div>`;
   }).join("");
 
+  const stripHtml=hs.length>1?`<div class="strip" role="img" aria-label="Portfolio allocation by holding, tinted by today's change">${tiles}</div>
+    <div class="strip-note">Width is portfolio weight. Colour is today’s move.</div>`:"";
   const sub=[
     `<span class="${cls(t.dayEur)}">${sgnEur(t.dayEur)} (${pct(t.dayPct)})<small>Today</small></span>`,
     `<span class="${cls(t.gainEur)}">${sgnEur(t.gainEur)}${t.gainPct!=null?` (${pct(t.gainPct)})`:""}<small>Total gain</small></span>`,
     `<span>${eur0(t.cost)}<small>Cost basis</small></span>`
   ];
-  if(m.hasDiv && t.div!=null) sub.push(`<span>${eur(t.div)}<small>Dividends received</small></span>`);
 
   const cols=[
     {k:"name",l:"Holding",get:h=>h.name,str:true},
@@ -294,7 +291,6 @@ function renderPortfolio(m,el){
     {k:"gainEur",l:"Gain",get:h=>h.gainEur,fmt:h=>`<span class="${cls(h.gainEur)}">${sgnEur(h.gainEur)}</span>`},
     {k:"gainPct",l:"Gain %",get:h=>h.gainPct,fmt:h=>`<span class="${cls(h.gainPct)}">${pct(h.gainPct)}</span>`}
   ];
-  if(m.hasDiv) cols.push({k:"div",l:"Dividends",get:h=>h.div,fmt:h=>h.div==null?"–":eur(h.div)});
   if(m.hasRange) cols.push({k:"range",l:"1Y range",get:h=>(h.max>h.min&&h.price!=null)?(h.price-h.min)/(h.max-h.min):null,
     fmt:h=>{ if(!(h.max>h.min)||h.price==null) return "–";
       const p=Math.max(0,Math.min(1,(h.price-h.min)/(h.max-h.min)))*100;
@@ -324,169 +320,13 @@ function renderPortfolio(m,el){
       <div class="total">${eur(t.value)}</div>
       <div class="sub">${sub.join("")}</div>
     </section>
-    <div class="strip" role="img" aria-label="Portfolio allocation by holding, tinted by today's change">${tiles}</div>
-    <div class="strip-note">Width is portfolio weight. Colour is today’s move.</div>
+    ${stripHtml}
     <div class="card tablewrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>
     ${groups}${fx}`;
   el.querySelectorAll("[data-sort]").forEach(b=>b.onclick=()=>{
     const k=b.dataset.sort;
     sort = sort.key===k ? {key:k,dir:-sort.dir} : {key:k,dir:k==="name"?1:-1};
     renderPortfolio(m,el);
-  });
-}
-
-/* ---------- generic table view (transactions) ---------- */
-let tsort={col:-1,dir:1}, tquery="";
-function cellKey(s){
-  const n=num(s); if(n!=null) return n;
-  let m=String(s).trim().match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
-  if(m) return Date.UTC(+m[3],+m[2]-1,+m[1]);
-  m=String(s).trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(m) return Date.UTC(+m[1],+m[2]-1,+m[3]);
-  return String(s).toLowerCase();
-}
-function renderTable(rows,el){
-  rows=rows.filter(r=>r.some(c=>c.trim()));
-  if(!rows.length){ el.innerHTML=`<div class="card msg"><h3>This tab is empty</h3></div>`; return; }
-  const head=rows[0], data=rows.slice(1);
-  const draw=()=>{
-    let d=data.filter(r=>!tquery||r.join(" ").toLowerCase().includes(tquery));
-    if(tsort.col>=0) d=[...d].sort((a,b)=>{
-      const x=cellKey(a[tsort.col]||""), y=cellKey(b[tsort.col]||"");
-      if(typeof x==="number"&&typeof y==="number") return tsort.dir*(x-y);
-      return tsort.dir*String(x).localeCompare(String(y));
-    });
-    el.querySelector("tbody").innerHTML=d.map(r=>"<tr>"+head.map((_,i)=>`<td class="${i===0?'':''}">${esc(r[i]||"")}</td>`).join("")+"</tr>").join("");
-    el.querySelector("#count").textContent=`${d.length} of ${data.length} rows`;
-  };
-  el.innerHTML=`<div class="card">
-    <div class="toolbar"><input id="q" type="search" placeholder="Search transactions" value="${esc(tquery)}" aria-label="Search transactions"><span id="count"></span></div>
-    <div class="tablewrap"><table><thead><tr>${head.map((h,i)=>`<th aria-sort="${tsort.col===i?(tsort.dir>0?'ascending':'descending'):'none'}"><button data-col="${i}" style="text-align:${i===0?'left':'right'}">${esc(h)||"&nbsp;"}${tsort.col===i?(tsort.dir>0?' ↑':' ↓'):''}</button></th>`).join("")}</tr></thead><tbody></tbody></table></div></div>`;
-  el.querySelector("#q").oninput=e=>{ tquery=e.target.value.toLowerCase(); draw(); };
-  el.querySelectorAll("[data-col]").forEach(b=>b.onclick=()=>{
-    const i=+b.dataset.col;
-    tsort = tsort.col===i ? {col:i,dir:-tsort.dir} : {col:i,dir:1};
-    renderTable(rows,el);
-  });
-  draw();
-}
-
-
-/* ---------- transactions view ---------- */
-const tx={view:"list",q:"",type:"",broker:"",ticker:"",openOnly:true,key:"date",dir:-1};
-function parseDate(s){
-  const m=String(s||"").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  return m?Date.UTC(+m[3],+m[2]-1,+m[1]):null;
-}
-const fDate=ts=>ts==null?"–":new Date(ts).toLocaleDateString(LOCALE,{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"});
-function buildTransactions(rows){
-  rows=rows.filter(r=>r.some(c=>c.trim()));
-  const H=rows[0]||[];
-  const c={ticker:colIdx(H,"Ticker"),name:colIdx(H,"Name"),type:colIdx(H,"Type"),price:colIdx(H,"Executed Price"),
-    date:colIdx(H,"Date"),shares:colIdx(H,"Nº of shares"),ccy:colIdx(H,"Currency"),total:colIdx(H,"Total (€)"),
-    fee:colIdx(H,"Commission (€)"),invested:colIdx(H,"Total Invested (€)"),broker:colIdx(H,"Broker")};
-  if(c.ticker<0||c.type<0||c.invested<0||c.date<0) throw new Error("not a transactions tab");
-  const v=(r,k)=>c[k]>=0?(r[c[k]]||"").trim():"";
-  return rows.slice(1).filter(r=>v(r,"ticker")).map(r=>({
-    ticker:v(r,"ticker"), name:/^#/.test(v(r,"name"))?"":v(r,"name"), type:v(r,"type").toUpperCase(),
-    price:num(v(r,"price")), priceRaw:v(r,"price"), date:parseDate(v(r,"date")), shares:num(v(r,"shares")),
-    ccy:v(r,"ccy"), total:num(v(r,"total")), fee:num(v(r,"fee"))||0, invested:num(v(r,"invested")), broker:v(r,"broker")
-  }));
-}
-function renderTransactions(rows,el){
-  const all=buildTransactions(rows);
-  const uniq=k=>[...new Set(all.map(t=>t[k]).filter(Boolean))].sort();
-  const names={}; all.forEach(t=>{ if(t.name&&!names[t.ticker]) names[t.ticker]=t.name; });
-  const opt=(arr,sel,label)=>`<option value="">${label}</option>`+arr.map(x=>`<option value="${esc(x)}"${x===sel?" selected":""}>${esc(x)}</option>`).join("");
-
-  let list=all.filter(t=>
-    (!tx.type||t.type===tx.type)&&(!tx.broker||t.broker===tx.broker)&&(!tx.ticker||t.ticker===tx.ticker)&&
-    (!tx.q||(t.ticker+" "+t.name+" "+t.broker+" "+t.type).toLowerCase().includes(tx.q)));
-
-  const buys=list.filter(t=>t.type==="BUY"), sells=list.filter(t=>t.type==="SELL");
-  const sum=(a,f)=>a.reduce((x,t)=>x+(f(t)||0),0);
-  const bought=sum(buys,t=>t.invested), sold=-sum(sells,t=>t.invested), fees=sum(list,t=>t.fee);
-  const cards=[["Bought",eur0(bought)],["Sold (after fees)",eur0(sold)],["Net invested",eur0(bought-sold)],["Fees paid",eur(fees)],["Transactions",String(list.length)]]
-    .map(([l,x])=>`<div class="card group"><div class="g-name">${l}</div><div class="g-val">${x}</div></div>`).join("");
-
-  let table;
-  if(tx.view==="list"){
-    const cols=[
-      {k:"date",l:"Date",get:t=>t.date,fmt:t=>fDate(t.date),left:true},
-      {k:"ticker",l:"Holding",get:t=>t.ticker,str:true,left:true,fmt:t=>`<b>${esc(t.ticker)}</b>${t.name?`<small style="display:block;color:var(--muted)">${esc(t.name)}</small>`:""}`},
-      {k:"type",l:"Type",get:t=>t.type,str:true,fmt:t=>`<span class="${t.type==="BUY"?"up":t.type==="SELL"?"down":""}">${esc(t.type)}</span>`},
-      {k:"shares",l:"Shares",get:t=>t.shares,fmt:t=>t.shares==null?"–":fNum.format(t.shares)},
-      {k:"price",l:"Price",get:t=>t.price,fmt:t=>t.price==null?esc(t.priceRaw||"–"):`${fNum.format(t.price)} <small style="color:var(--muted)">${esc(t.ccy)}</small>`},
-      {k:"invested",l:"Total (€)",get:t=>t.invested,fmt:t=>eur(t.invested)},
-      {k:"fee",l:"Fees",get:t=>t.fee,fmt:t=>t.fee?eur(t.fee):"–"},
-      {k:"broker",l:"Broker",get:t=>t.broker,str:true,fmt:t=>esc(t.broker)}
-    ];
-    const sc=cols.find(x=>x.k===tx.key)||cols[0];
-    list=[...list].sort((a,b)=>{
-      const x=sc.get(a), y=sc.get(b);
-      if(sc.str) return tx.dir*String(x).localeCompare(String(y));
-      return tx.dir*((x??-Infinity)-(y??-Infinity));
-    });
-    table=`<table><thead><tr>${cols.map(x=>`<th class="${x.k===tx.key?"sorted":""}" aria-sort="${x.k===tx.key?(tx.dir>0?"ascending":"descending"):"none"}"><button data-k="${x.k}" style="text-align:${x.left?"left":"right"}">${x.l}${x.k===tx.key?(tx.dir>0?" ↑":" ↓"):""}</button></th>`).join("")}</tr></thead>
-      <tbody>${list.map(t=>"<tr>"+cols.map(x=>`<td class="${x.left?"l":""}">${x.fmt(t)}</td>`).join("")+"</tr>").join("")}</tbody></table>`;
-  } else {
-    const g={};
-    list.forEach(t=>{
-      const o=g[t.ticker]||(g[t.ticker]={ticker:t.ticker,name:names[t.ticker]||"",buy:0,sell:0,shares:0,n:0,first:null,last:null});
-      o.n++; o.shares+=t.shares||0;
-      if(t.type==="BUY") o.buy+=t.invested||0; else if(t.type==="SELL") o.sell+=-(t.invested||0);
-      if(t.date!=null){ o.first=o.first==null?t.date:Math.min(o.first,t.date); o.last=o.last==null?t.date:Math.max(o.last,t.date); }
-    });
-    let gl=Object.values(g).map(o=>({...o,net:o.buy-o.sell}));
-    if(tx.openOnly) gl=gl.filter(o=>o.shares>0.0001);
-    const cols=[
-      {k:"ticker",l:"Holding",str:true,left:true,fmt:o=>`<b>${esc(o.ticker)}</b>${o.name?`<small style="display:block;color:var(--muted)">${esc(o.name)}</small>`:""}`},
-      {k:"shares",l:"Net shares",fmt:o=>fNum.format(o.shares)},
-      {k:"buy",l:"Bought (€)",fmt:o=>eur(o.buy)},
-      {k:"sell",l:"Sold (€)",fmt:o=>o.sell?eur(o.sell):"–"},
-      {k:"net",l:"Net invested (€)",fmt:o=>eur(o.net)},
-      {k:"n",l:"Trades",fmt:o=>o.n},
-      {k:"first",l:"First",fmt:o=>fDate(o.first)},
-      {k:"last",l:"Last",fmt:o=>fDate(o.last)}
-    ];
-    const key=cols.some(x=>x.k===tx.key)?tx.key:"net";
-    const sc=cols.find(x=>x.k===key);
-    gl.sort((a,b)=>sc.str?tx.dir*a.ticker.localeCompare(b.ticker):tx.dir*((a[key]??-Infinity)-(b[key]??-Infinity)));
-    list=gl;
-    table=`<table><thead><tr>${cols.map(x=>`<th class="${x.k===key?"sorted":""}"><button data-k="${x.k}" style="text-align:${x.left?"left":"right"}">${x.l}${x.k===key?(tx.dir>0?" ↑":" ↓"):""}</button></th>`).join("")}</tr></thead>
-      <tbody>${gl.map(o=>"<tr>"+cols.map(x=>`<td class="${x.left?"l":""}">${x.fmt(o)}</td>`).join("")+"</tr>").join("")}</tbody></table>`;
-  }
-
-  el.innerHTML=`
-    <div class="groups" style="margin-bottom:16px">${cards}</div>
-    <div class="card">
-      <div class="toolbar" style="flex-wrap:wrap;justify-content:flex-start">
-        <div class="seg" role="group" aria-label="View">
-          <button data-view="list" aria-pressed="${tx.view==="list"}">Transactions</button>
-          <button data-view="ticker" aria-pressed="${tx.view==="ticker"}">By holding</button>
-        </div>
-        <input id="q" type="search" placeholder="Search ticker, name, broker" value="${esc(tx.q)}" aria-label="Search">
-        <select id="f-type" aria-label="Type">${opt(["BUY","SELL"].filter(x=>uniq("type").includes(x)).concat(uniq("type").filter(x=>x!=="BUY"&&x!=="SELL")),tx.type,"All types")}</select>
-        <select id="f-broker" aria-label="Broker">${opt(uniq("broker"),tx.broker,"All brokers")}</select>
-        <select id="f-ticker" aria-label="Holding">${opt(uniq("ticker"),tx.ticker,"All holdings")}</select>
-        ${tx.view==="ticker"?`<label class="chk"><input type="checkbox" id="open" ${tx.openOnly?"checked":""}> Open positions only</label>`:""}
-        <span style="margin-left:auto">${list.length} ${tx.view==="list"?"rows":"holdings"}</span>
-      </div>
-      <div class="tablewrap">${table}</div>
-    </div>
-    ${tx.view==="ticker"?`<div class="strip-note" style="margin:10px 0 0">Net shares add up the Nº of shares column from this tab, including split rows, so check them against your broker if a number looks off.</div>`:""}`;
-
-  const redraw=()=>renderTransactions(rows,el);
-  el.querySelector("#q").oninput=e=>{ tx.q=e.target.value.toLowerCase(); const pos=e.target.selectionStart; redraw(); const q=el.querySelector("#q"); q.focus(); q.setSelectionRange(pos,pos); };
-  el.querySelector("#f-type").onchange=e=>{tx.type=e.target.value;redraw();};
-  el.querySelector("#f-broker").onchange=e=>{tx.broker=e.target.value;redraw();};
-  el.querySelector("#f-ticker").onchange=e=>{tx.ticker=e.target.value;redraw();};
-  const open=el.querySelector("#open"); if(open) open.onchange=e=>{tx.openOnly=e.target.checked;redraw();};
-  el.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{ tx.view=b.dataset.view; tx.key=tx.view==="list"?"date":"net"; tx.dir=-1; redraw(); });
-  el.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{
-    const k=b.dataset.k; const strCol=["ticker","type","broker"].includes(k);
-    if(tx.key===k) tx.dir=-tx.dir; else { tx.key=k; tx.dir=strCol?1:-1; }
-    redraw();
   });
 }
 
@@ -525,9 +365,7 @@ function stamp(at,saved){
 function show(tab,rows){
   const el=$("#view");
   try{
-    if(tab.type==="portfolio") renderPortfolio(buildPortfolio(rows),el);
-    else if(tab.type==="transactions"){ try{ renderTransactions(rows,el); }catch(e){ renderTable(rows,el); } }
-    else renderTable(rows,el);
+    renderPortfolio(buildPortfolio(rows),el);
   }catch(e){ error(e.message); }
 }
 function error(msg,hint){
