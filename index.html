@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Portfolio</title>
-<meta name="theme-color" content="#1F4FFF">
+<meta name="theme-color" content="#1b729b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Portfolio">
@@ -18,13 +18,14 @@
 <style>
 :root{
   color-scheme:light;
-  --bg:#ffffff; --surface:#ffffff; --soft:#f1f4fb; --ink:#0b1b3a; --muted:#5b6b8c; --line:#e3e8f2;
-  --brand:#1f4fff; --on-brand:#ffffff; --hi:#ffd83d;
-  --up:#08894e; --down:#d92d3a; --accent:#1f4fff;
+  --bg:#ffffff; --surface:#ffffff; --soft:#f1f4fb; --ink:#0b1b3a; --muted:#5b6b8c; --line:#e3e8f2; --band1:#f4f7fb; --band2:#e8eef5; --head:#dce5ef; --track:#c5d1e0;
+  --brand:#1b729b; --on-brand:#ffffff; --hi:#ffd83d;
+  --up:#077a45; --down:#c8222f; --accent:#1b729b;
   --font:'Schibsted Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
+html{overflow-y:scroll}
 body{background:var(--bg);color:var(--ink);font-family:var(--font);font-variant-numeric:tabular-nums;
   -webkit-text-size-adjust:100%;line-height:1.4;
   padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
@@ -48,24 +49,30 @@ nav.tabs button:focus-visible{outline:2px solid #fff;outline-offset:1px}
 .up{color:var(--up)} .down{color:var(--down)}
 
 /* allocation strip: width = weight, tint = day change */
-.strip{display:flex;gap:3px;height:92px;margin:6px 0 28px}
+.stripzone{--sh:92px;height:calc(var(--sh) + 55px);display:flow-root}   /* same height with or without the bar, so the table never moves */
+.strip{display:flex;gap:3px;height:var(--sh);margin:6px 0 0}
 .tile{min-width:0;border-radius:8px;padding:8px 9px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
-.tile b{font-size:14px;font-weight:700;letter-spacing:.01em}
-.tile span{font-size:12px;font-weight:600;white-space:nowrap}
-.strip-note{color:var(--muted);font-size:12px;margin:-22px 0 26px}
+.tile b{font-size:14px;font-weight:700;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .t-meta{display:flex;flex-direction:column;gap:1px;min-width:0}
+.tile .t-meta span{display:block;font-size:12px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .t-day{font-weight:700}
+.tile .t-w{font-weight:500;opacity:.85}
+.strip-note{color:var(--muted);font-size:12px;margin:6px 0 0}
 
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px}
 .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 table{border-collapse:collapse;width:100%;font-size:14px}
-th,td{padding:11px 12px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
-th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1}
+th,td{padding:11px 12px;text-align:right;white-space:nowrap;border-bottom:0}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;z-index:1}
 tbody tr:last-child td{border-bottom:0}
-th{font-weight:500;color:var(--muted);font-size:12.5px;padding:0;background:var(--surface)}
+th{font-weight:500;color:var(--muted);font-size:12.5px;padding:0;background:var(--head)}
+tbody tr:nth-child(odd) td{background:var(--band1)}
+tbody tr:nth-child(even) td{background:var(--band2)}
 th button{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;padding:11px 12px;text-align:inherit}
 th.sorted button{color:var(--ink);font-weight:700;box-shadow:inset 0 -3px 0 var(--brand)}
 td.name small{display:block;color:var(--muted);font-size:12px}
 td.name b{font-weight:600}
-.range{display:inline-block;position:relative;width:70px;height:4px;border-radius:2px;background:var(--line);vertical-align:middle}
+.range{display:inline-block;position:relative;width:70px;height:4px;border-radius:2px;background:var(--track);vertical-align:middle}
 .range i{position:absolute;top:-3px;width:3px;height:10px;border-radius:2px;background:var(--brand);transform:translateX(-1px)}
 
 h2{font-size:15px;font-weight:600;margin:32px 0 10px}
@@ -101,7 +108,7 @@ td.l{text-align:left}
 .skeleton{height:220px;border-radius:12px;background:linear-gradient(90deg,var(--line),transparent,var(--line));background-size:200% 100%;animation:sk 1.4s linear infinite}
 @keyframes sk{to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.skeleton{animation:none}}
-@media (max-width:560px){.strip{height:76px}.tile span{display:none}.hero .sub{font-size:15px}}
+@media (max-width:560px){.stripzone{--sh:80px}.tile{padding:7px 7px}.tile .t-meta span{font-size:11px}.hero .sub{font-size:15px}}
 </style>
 </head>
 <body>
@@ -269,11 +276,11 @@ function renderPortfolio(m,el){
   const tiles=hs.filter(h=>h.value>0).sort((a,b)=>b.value-a.value).map(h=>{
     const w=h.weight!=null?h.weight:(h.value/t.value*100);
     return `<div class="tile" style="flex:${Math.max(w,1.5)} 1 0;${tintStyle(h.dayPct)}" title="${esc(h.name)} · ${fNum.format(w)}% of portfolio">
-      <b>${esc(h.ticker)}</b><span>${fNum.format(w)}% · ${pct(h.dayPct)}</span></div>`;
+      <b>${esc(h.ticker)}</b><div class="t-meta"><span class="t-day">${pct(h.dayPct)}</span><span class="t-w">${fNum.format(w)}%</span></div></div>`;
   }).join("");
 
-  const stripHtml=hs.length>1?`<div class="strip" role="img" aria-label="Portfolio allocation by holding, tinted by today's change">${tiles}</div>
-    <div class="strip-note">Width is portfolio weight. Colour is today’s move.</div>`:"";
+  const stripHtml=`<div class="stripzone">${hs.length>1?`<div class="strip" role="img" aria-label="Portfolio allocation by holding, tinted by today's change">${tiles}</div>
+    <div class="strip-note">Width is portfolio weight. Colour is today’s move.</div>`:""}</div>`;
   const sub=[
     `<span class="${cls(t.dayEur)}">${sgnEur(t.dayEur)} (${pct(t.dayPct)})<small>Today</small></span>`,
     `<span class="${cls(t.gainEur)}">${sgnEur(t.gainEur)}${t.gainPct!=null?` (${pct(t.gainPct)})`:""}<small>Total gain</small></span>`,
