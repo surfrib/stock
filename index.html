@@ -209,7 +209,9 @@ function buildPortfolio(rows){
   const holdings=[]; let lastHolding=1;
   for(let i=2;i<rows.length;i++){
     const r=rows[i]; const t=(r[c.ticker]||"").trim();
-    if(t && g(r,"value")!=null){
+    // a real holding has a ticker, a share count and a value; this skips the "Currency …" rows,
+    // which can sit on the same rows as the WINNERS / ETFs figures
+    if(t && !/^currency/i.test((r[0]||"").trim()) && g(r,"shares")!=null && g(r,"value")!=null){
       holdings.push({
         name:(r[0]||"").trim(), ticker:t, ccy:(r[c.ccy]||"").trim(), price:g(r,"price"),
         dayPct:g(r,"dayPct"), shares:g(r,"shares"), dayEur:g(r,"dayTotal"),
@@ -242,8 +244,10 @@ function buildPortfolio(rows){
   totals.dayPct=prev?totals.dayEur/prev*100:null;
 
   const groups=[], fx=[];
-  for(let i=lastHolding+1;i<rows.length;i++){
+  const holdingRows=new Set(); // rows already used as holdings are not scanned for groups
+  for(let i=2;i<rows.length;i++){
     const r=rows[i];
+    if((r[c.ticker]||"").trim() && !/^currency/i.test((r[0]||"").trim()) && g(r,"shares")!=null && g(r,"value")!=null) continue;
     r.forEach((cell,j)=>{
       if(/^(winners|etfs)$/i.test(cell.trim()) && c.value>=0){
         groups.push({ name:cell.trim(), value:num(r[c.value]), cost:g(r,"cost"), gainEur:g(r,"gainEur"), gainPct:g(r,"gainPct") });
